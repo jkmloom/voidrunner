@@ -152,6 +152,64 @@ export class Game {
 
     this.ui.startBtn.addEventListener('click', () => this._startGame());
     this.ui.restartBtn.addEventListener('click', () => this._startGame());
+
+    // Mobile controls setup
+    const mobileBtns = document.querySelectorAll('.dpad-btn, .action-btn');
+    mobileBtns.forEach(btn => {
+      // Touch events
+      btn.addEventListener('touchstart', (e) => {
+        e.preventDefault(); // Prevent scrolling / double tap zoom
+        const key = btn.getAttribute('data-key');
+        if (key) {
+          this.keys[key] = true;
+          
+          if (key === 'Space') {
+            if (this.state === 'menu' || this.state === 'gameover') {
+              this._startGame();
+            }
+          }
+          if (key === 'KeyP') {
+            if (this.state === 'playing') {
+              this._pause();
+            } else if (this.state === 'paused') {
+              this._resume();
+            }
+          }
+        }
+        btn.classList.add('btn-active');
+      });
+
+      btn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        const key = btn.getAttribute('data-key');
+        if (key) this.keys[key] = false;
+        btn.classList.remove('btn-active');
+      });
+
+      // Mouse fallback for testing
+      btn.addEventListener('mousedown', (e) => {
+        const key = btn.getAttribute('data-key');
+        if (key) {
+          this.keys[key] = true;
+          if (key === 'Space' && (this.state === 'menu' || this.state === 'gameover')) this._startGame();
+          if (key === 'KeyP') {
+            if (this.state === 'playing') this._pause();
+            else if (this.state === 'paused') this._resume();
+          }
+        }
+        btn.classList.add('btn-active');
+      });
+      btn.addEventListener('mouseup', (e) => {
+        const key = btn.getAttribute('data-key');
+        if (key) this.keys[key] = false;
+        btn.classList.remove('btn-active');
+      });
+      btn.addEventListener('mouseleave', (e) => {
+        const key = btn.getAttribute('data-key');
+        if (key) this.keys[key] = false;
+        btn.classList.remove('btn-active');
+      });
+    });
   }
 
   _startGame() {

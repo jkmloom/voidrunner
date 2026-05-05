@@ -1,220 +1,239 @@
 <!-- Written by Jatin Kumar Mehta | github id: jkmloom -->
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VOID RUNNER — Adaptive AI Space Shooter</title>
-    <meta name="description" content="VOID RUNNER: A retro-futuristic infinite space shooter with adaptive ML difficulty." />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
-    <link rel="icon" type="image/png" href="/icon.png" />
-  </head>
-  <body>
-    <div id="app-wrapper">
-      <!-- ═══ Game Area ═══ -->
-      <div id="game-container">
-        <canvas id="game-canvas"></canvas>
 
-        <!-- Scanline overlay -->
-        <div id="scanlines"></div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VOID RUNNER — JKM</title>
+  <meta name="description"
+    content="VOID RUNNER: A retro-futuristic infinite space shooter with adaptive ML difficulty." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap"
+    rel="stylesheet" />
+  <link rel="icon" type="image/png" href="/icon.png" />
+</head>
 
-        <!-- CRT vignette -->
-        <div id="vignette"></div>
+<body>
+  <div id="app-wrapper">
+    <!-- ═══ Game Area ═══ -->
+    <div id="game-container">
+      <canvas id="game-canvas"></canvas>
 
-        <!-- HUD -->
-        <div id="hud">
-          <div id="hud-left">
-            <div id="score-label" class="hud-label">SCORE</div>
-            <div id="score-value" class="hud-value">0</div>
-            <div id="combo-display" class="combo-hidden">
-              <span id="combo-value">x1</span>
-              <div id="combo-bar-wrap"><div id="combo-bar"></div></div>
+      <!-- Scanline overlay -->
+      <div id="scanlines"></div>
+
+      <!-- CRT vignette -->
+      <div id="vignette"></div>
+
+      <!-- HUD -->
+      <div id="hud">
+        <div id="hud-left">
+          <div id="score-label" class="hud-label">SCORE</div>
+          <div id="score-value" class="hud-value">0</div>
+          <div id="combo-display" class="combo-hidden">
+            <span id="combo-value">x1</span>
+            <div id="combo-bar-wrap">
+              <div id="combo-bar"></div>
             </div>
           </div>
-          <div id="hud-center">
-            <div id="wave-label" class="hud-label">WAVE</div>
-            <div id="wave-value" class="hud-value">1</div>
-          </div>
-          <div id="hud-right">
-            <div id="health-label" class="hud-label">HULL</div>
-            <div id="health-bar-wrap">
-              <div id="health-bar"></div>
-              <div id="health-text">100%</div>
-            </div>
-            <div id="highscore-label" class="hud-label">HI-SCORE</div>
-            <div id="highscore-value" class="hud-value">0</div>
-          </div>
         </div>
-
-        <!-- Power-up indicator -->
-        <div id="powerup-indicator" class="powerup-hidden"></div>
-
-        <!-- Start Screen -->
-        <div id="start-screen" class="overlay">
-          <div class="overlay-content">
-            <h1 id="game-title">VOID<span class="accent">RUNNER</span></h1>
-            <p class="subtitle">ADAPTIVE AI SPACE SHOOTER</p>
-            <div class="divider"></div>
-            <div class="controls-info">
-              <div class="control-row"><kbd>W A S D</kbd> or <kbd>↑ ← ↓ →</kbd> Move</div>
-              <div class="control-row"><kbd>SPACE</kbd> Fire</div>
-              <div class="control-row"><kbd>P</kbd> Pause</div>
-            </div>
-            <div class="divider"></div>
-            <p class="ai-note">⟨◈⟩ PRECOG Neural Engine analyzes your play style and adapts in real-time</p>
-            <button id="start-btn" class="neon-btn">START MISSION</button>
-            <p class="hint">Press ENTER or click to start</p>
-          </div>
+        <div id="hud-center">
+          <div id="wave-label" class="hud-label">WAVE</div>
+          <div id="wave-value" class="hud-value">1</div>
         </div>
-
-        <!-- Game Over Screen -->
-        <div id="gameover-screen" class="overlay overlay-hidden">
-          <div class="overlay-content">
-            <h1 class="gameover-title">MISSION<span class="accent"> FAILED</span></h1>
-            <div class="final-stats">
-              <div class="stat-row"><span class="stat-label">FINAL SCORE</span><span id="final-score" class="stat-value">0</span></div>
-              <div class="stat-row"><span class="stat-label">WAVES SURVIVED</span><span id="final-wave" class="stat-value">0</span></div>
-              <div class="stat-row"><span class="stat-label">ENEMIES DESTROYED</span><span id="final-kills" class="stat-value">0</span></div>
-              <div class="stat-row"><span class="stat-label">MAX COMBO</span><span id="final-combo" class="stat-value">x1</span></div>
-            </div>
-            <div id="new-highscore" class="new-hs-hidden">★ NEW HIGH SCORE ★</div>
-            <button id="restart-btn" class="neon-btn">RETRY MISSION</button>
-            <p class="hint">Press ENTER or click to retry</p>
+        <div id="hud-right">
+          <div id="health-label" class="hud-label">HULL</div>
+          <div id="health-bar-wrap">
+            <div id="health-bar"></div>
+            <div id="health-text">100%</div>
           </div>
-        </div>
-
-        <!-- Pause Screen -->
-        <div id="pause-screen" class="overlay overlay-hidden">
-          <div class="overlay-content">
-            <h1 class="pause-title">PAUSED</h1>
-            <p class="hint">Press P or ESC to resume</p>
-          </div>
-        </div>
-
-        <!-- Wave announcement -->
-        <div id="wave-announce" class="wave-announce-hidden">
-          <div id="wave-announce-text">WAVE 1</div>
-          <div id="wave-announce-sub">INCOMING</div>
+          <div id="highscore-label" class="hud-label">HI-SCORE</div>
+          <div id="highscore-value" class="hud-value">0</div>
         </div>
       </div>
 
-      <!-- ═══ ML Side Panel ═══ -->
-      <div id="ml-panel">
-        <!-- Header -->
-        <div class="ml-header">
-          <div class="ml-title-row">
-            <span class="ml-icon">⟨◈⟩</span>
-            <h2 class="ml-title">PRECOG<span class="ml-title-accent"> AI</span></h2>
+      <!-- Power-up indicator -->
+      <div id="powerup-indicator" class="powerup-hidden"></div>
+
+      <!-- Start Screen -->
+      <div id="start-screen" class="overlay">
+        <div class="overlay-content">
+          <h1 id="game-title">VOID<span class="accent">RUNNER</span></h1>
+          <p class="subtitle">ADAPTIVE AI SPACE SHOOTER</p>
+          <div class="divider"></div>
+          <div class="controls-info">
+            <div class="control-row"><kbd>W A S D</kbd> or <kbd>↑ ← ↓ →</kbd> Move</div>
+            <div class="control-row"><kbd>SPACE</kbd> Fire</div>
+            <div class="control-row"><kbd>P</kbd> Pause</div>
           </div>
-          <div class="ml-status-row">
-            <span id="ml-status-dot" class="status-dot offline"></span>
-            <span id="ml-status-text" class="ml-status-label">OFFLINE</span>
-          </div>
+          <div class="divider"></div>
+          <p class="ai-note">⟨◈⟩ PRECOG Neural Engine analyzes your play style and adapts in real-time</p>
+          <button id="start-btn" class="neon-btn">START MISSION</button>
+          <p class="hint">Press ENTER or click to start</p>
         </div>
+      </div>
 
-        <div class="ml-divider"></div>
-
-        <!-- Skill Score -->
-        <div class="ml-section">
-          <div class="ml-section-title">SKILL ASSESSMENT</div>
-          <div class="ml-skill-display">
-            <span id="ml-skill-value" class="ml-skill-number">5.0</span>
-            <span class="ml-skill-max">/ 10</span>
+      <!-- Game Over Screen -->
+      <div id="gameover-screen" class="overlay overlay-hidden">
+        <div class="overlay-content">
+          <h1 class="gameover-title">MISSION<span class="accent"> FAILED</span></h1>
+          <div class="final-stats">
+            <div class="stat-row"><span class="stat-label">FINAL SCORE</span><span id="final-score"
+                class="stat-value">0</span></div>
+            <div class="stat-row"><span class="stat-label">WAVES SURVIVED</span><span id="final-wave"
+                class="stat-value">0</span></div>
+            <div class="stat-row"><span class="stat-label">ENEMIES DESTROYED</span><span id="final-kills"
+                class="stat-value">0</span></div>
+            <div class="stat-row"><span class="stat-label">MAX COMBO</span><span id="final-combo"
+                class="stat-value">x1</span></div>
           </div>
-          <div class="ml-skill-bar-wrap">
-            <div id="ml-skill-bar" class="ml-skill-bar"></div>
-          </div>
+          <div id="new-highscore" class="new-hs-hidden">★ NEW HIGH SCORE ★</div>
+          <button id="restart-btn" class="neon-btn">RETRY MISSION</button>
+          <p class="hint">Press ENTER or click to retry</p>
         </div>
+      </div>
 
-        <div class="ml-divider"></div>
-
-        <!-- Player Metrics -->
-        <div class="ml-section">
-          <div class="ml-section-title">PLAYER METRICS</div>
-          <div class="ml-metric-row">
-            <span class="ml-metric-label">ACCURACY</span>
-            <div class="ml-metric-bar-wrap"><div id="ml-bar-accuracy" class="ml-metric-bar bar-cyan"></div></div>
-            <span id="ml-val-accuracy" class="ml-metric-value">50%</span>
-          </div>
-          <div class="ml-metric-row">
-            <span class="ml-metric-label">EVASION</span>
-            <div class="ml-metric-bar-wrap"><div id="ml-bar-dodge" class="ml-metric-bar bar-magenta"></div></div>
-            <span id="ml-val-dodge" class="ml-metric-value">50%</span>
-          </div>
-          <div class="ml-metric-row">
-            <span class="ml-metric-label">AGGRESSION</span>
-            <div class="ml-metric-bar-wrap"><div id="ml-bar-aggression" class="ml-metric-bar bar-orange"></div></div>
-            <span id="ml-val-aggression" class="ml-metric-value">50%</span>
-          </div>
-          <div class="ml-metric-row">
-            <span class="ml-metric-label">ENTROPY</span>
-            <div class="ml-metric-bar-wrap"><div id="ml-bar-entropy" class="ml-metric-bar bar-purple"></div></div>
-            <span id="ml-val-entropy" class="ml-metric-value">50%</span>
-          </div>
+      <!-- Pause Screen -->
+      <div id="pause-screen" class="overlay overlay-hidden">
+        <div class="overlay-content">
+          <h1 class="pause-title">PAUSED</h1>
+          <p class="hint">Press P or ESC to resume</p>
         </div>
+      </div>
 
-        <div class="ml-divider"></div>
-
-        <!-- Difficulty Adjustments -->
-        <div class="ml-section">
-          <div class="ml-section-title">ADAPTIVE DIFFICULTY</div>
-          <div class="ml-diff-grid">
-            <div class="ml-diff-item">
-              <span class="ml-diff-label">DIFFICULTY</span>
-              <span id="ml-difficulty-value" class="ml-diff-value">+0%</span>
-            </div>
-            <div class="ml-diff-item">
-              <span class="ml-diff-label">ENEMY SPD</span>
-              <span id="ml-speed-value" class="ml-diff-value">+0%</span>
-            </div>
-            <div class="ml-diff-item">
-              <span class="ml-diff-label">FIRE RATE</span>
-              <span id="ml-firerate-value" class="ml-diff-value">+0%</span>
-            </div>
-            <div class="ml-diff-item">
-              <span class="ml-diff-label">ENEMY HP</span>
-              <span id="ml-health-value" class="ml-diff-value">+0%</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="ml-divider"></div>
-
-        <!-- Neural Network State -->
-        <div class="ml-section">
-          <div class="ml-section-title">NEURAL NETWORK</div>
-          <div class="ml-neural-stats">
-            <div class="ml-neural-row">
-              <span class="ml-neural-label">TRAIN STEPS</span>
-              <span id="ml-training-steps" class="ml-neural-value">0</span>
-            </div>
-            <div class="ml-neural-row">
-              <span class="ml-neural-label">PRED. ERROR</span>
-              <span id="ml-pred-error" class="ml-neural-value">1.0000</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="ml-divider"></div>
-
-        <!-- Position Heatmap -->
-        <div class="ml-section">
-          <div class="ml-section-title">POSITION HEATMAP</div>
-          <canvas id="ml-heatmap" width="240" height="180" class="ml-heatmap-canvas"></canvas>
-        </div>
-
-        <div class="ml-divider"></div>
-
-        <!-- Neural Log -->
-        <div class="ml-section ml-section-log">
-          <div class="ml-section-title">NEURAL LOG</div>
-          <div id="ml-log-entries" class="ml-log-scroll"></div>
-        </div>
+      <!-- Wave announcement -->
+      <div id="wave-announce" class="wave-announce-hidden">
+        <div id="wave-announce-text">WAVE 1</div>
+        <div id="wave-announce-sub">INCOMING</div>
       </div>
     </div>
 
-    <script type="module" src="/src/main.js"></script>
-  </body>
+    <!-- ═══ ML Side Panel ═══ -->
+    <div id="ml-panel">
+      <!-- Header -->
+      <div class="ml-header">
+        <div class="ml-title-row">
+          <span class="ml-icon">⟨◈⟩</span>
+          <h2 class="ml-title">PRECOG<span class="ml-title-accent"> AI</span></h2>
+        </div>
+        <div class="ml-status-row">
+          <span id="ml-status-dot" class="status-dot offline"></span>
+          <span id="ml-status-text" class="ml-status-label">OFFLINE</span>
+        </div>
+      </div>
+
+      <div class="ml-divider"></div>
+
+      <!-- Skill Score -->
+      <div class="ml-section">
+        <div class="ml-section-title">SKILL ASSESSMENT</div>
+        <div class="ml-skill-display">
+          <span id="ml-skill-value" class="ml-skill-number">5.0</span>
+          <span class="ml-skill-max">/ 10</span>
+        </div>
+        <div class="ml-skill-bar-wrap">
+          <div id="ml-skill-bar" class="ml-skill-bar"></div>
+        </div>
+      </div>
+
+      <div class="ml-divider"></div>
+
+      <!-- Player Metrics -->
+      <div class="ml-section">
+        <div class="ml-section-title">PLAYER METRICS</div>
+        <div class="ml-metric-row">
+          <span class="ml-metric-label">ACCURACY</span>
+          <div class="ml-metric-bar-wrap">
+            <div id="ml-bar-accuracy" class="ml-metric-bar bar-cyan"></div>
+          </div>
+          <span id="ml-val-accuracy" class="ml-metric-value">50%</span>
+        </div>
+        <div class="ml-metric-row">
+          <span class="ml-metric-label">EVASION</span>
+          <div class="ml-metric-bar-wrap">
+            <div id="ml-bar-dodge" class="ml-metric-bar bar-magenta"></div>
+          </div>
+          <span id="ml-val-dodge" class="ml-metric-value">50%</span>
+        </div>
+        <div class="ml-metric-row">
+          <span class="ml-metric-label">AGGRESSION</span>
+          <div class="ml-metric-bar-wrap">
+            <div id="ml-bar-aggression" class="ml-metric-bar bar-orange"></div>
+          </div>
+          <span id="ml-val-aggression" class="ml-metric-value">50%</span>
+        </div>
+        <div class="ml-metric-row">
+          <span class="ml-metric-label">ENTROPY</span>
+          <div class="ml-metric-bar-wrap">
+            <div id="ml-bar-entropy" class="ml-metric-bar bar-purple"></div>
+          </div>
+          <span id="ml-val-entropy" class="ml-metric-value">50%</span>
+        </div>
+      </div>
+
+      <div class="ml-divider"></div>
+
+      <!-- Difficulty Adjustments -->
+      <div class="ml-section">
+        <div class="ml-section-title">ADAPTIVE DIFFICULTY</div>
+        <div class="ml-diff-grid">
+          <div class="ml-diff-item">
+            <span class="ml-diff-label">DIFFICULTY</span>
+            <span id="ml-difficulty-value" class="ml-diff-value">+0%</span>
+          </div>
+          <div class="ml-diff-item">
+            <span class="ml-diff-label">ENEMY SPD</span>
+            <span id="ml-speed-value" class="ml-diff-value">+0%</span>
+          </div>
+          <div class="ml-diff-item">
+            <span class="ml-diff-label">FIRE RATE</span>
+            <span id="ml-firerate-value" class="ml-diff-value">+0%</span>
+          </div>
+          <div class="ml-diff-item">
+            <span class="ml-diff-label">ENEMY HP</span>
+            <span id="ml-health-value" class="ml-diff-value">+0%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ml-divider"></div>
+
+      <!-- Neural Network State -->
+      <div class="ml-section">
+        <div class="ml-section-title">NEURAL NETWORK</div>
+        <div class="ml-neural-stats">
+          <div class="ml-neural-row">
+            <span class="ml-neural-label">TRAIN STEPS</span>
+            <span id="ml-training-steps" class="ml-neural-value">0</span>
+          </div>
+          <div class="ml-neural-row">
+            <span class="ml-neural-label">PRED. ERROR</span>
+            <span id="ml-pred-error" class="ml-neural-value">1.0000</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ml-divider"></div>
+
+      <!-- Position Heatmap -->
+      <div class="ml-section">
+        <div class="ml-section-title">POSITION HEATMAP</div>
+        <canvas id="ml-heatmap" width="240" height="180" class="ml-heatmap-canvas"></canvas>
+      </div>
+
+      <div class="ml-divider"></div>
+
+      <!-- Neural Log -->
+      <div class="ml-section ml-section-log">
+        <div class="ml-section-title">NEURAL LOG</div>
+        <div id="ml-log-entries" class="ml-log-scroll"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+
 </html>
