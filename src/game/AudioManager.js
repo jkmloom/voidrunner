@@ -14,7 +14,7 @@ export class AudioManager {
     try {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.value = 0.3;
+      this.masterGain.gain.value = 1.0;
       this.masterGain.connect(this.ctx.destination);
     } catch (e) {
       this.enabled = false;
