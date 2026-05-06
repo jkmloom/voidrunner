@@ -59,7 +59,8 @@ export class Game {
 
     // Leaderboard
     this.leaderboard = [];
-    this.pendingLeaderboardScore = null;  // score waiting for name input
+    this.playerName = '';  // set before each game
+    this.nameModalCallback = null;  // what to do after name is entered
   }
 
   init() {
@@ -141,7 +142,7 @@ export class Game {
 
       if (e.code === 'Enter' || e.code === 'Space') {
         // Block if name modal is open
-        if (this.pendingLeaderboardScore !== null) return;
+        if (this.nameModalCallback !== null) return;
 
         if (this.state === 'menu') {
           e.preventDefault();
@@ -174,12 +175,12 @@ export class Game {
     this.ui.restartBtn.addEventListener('click', () => this._startGame());
 
     // Name modal events
-    this.ui.nameSubmitBtn.addEventListener('click', () => this._submitLeaderboardName());
+    this.ui.nameSubmitBtn.addEventListener('click', () => this._submitName());
     this.ui.nameInput.addEventListener('keydown', (e) => {
       if (e.code === 'Enter') {
         e.preventDefault();
         e.stopPropagation();
-        this._submitLeaderboardName();
+        this._submitName();
       }
       // Prevent game keys from firing while typing
       e.stopPropagation();
@@ -246,29 +247,32 @@ export class Game {
 
   _startGame() {
     // Block if name modal is open
-    if (this.pendingLeaderboardScore !== null) return;
+    if (this.nameModalCallback !== null) return;
 
-    this.audio.resume();
-    this.state = 'playing';
-    this.score = 0;
-    this.combo = 0;
-    this.maxCombo = 0;
-    this.comboTimer = 0;
-    this.bullets = [];
-    this.enemies = [];
-    this.powerups = [];
-    this.particles = new ParticleSystem();
-    this.waveManager.reset();
-    this.player = new Player(this.width / 2, this.height - 80);
+    // Ask for name first
+    this._showNameModal(() => {
+      this.audio.resume();
+      this.state = 'playing';
+      this.score = 0;
+      this.combo = 0;
+      this.maxCombo = 0;
+      this.comboTimer = 0;
+      this.bullets = [];
+      this.enemies = [];
+      this.powerups = [];
+      this.particles = new ParticleSystem();
+      this.waveManager.reset();
+      this.player = new Player(this.width / 2, this.height - 80);
 
-    this.ui.startScreen.classList.add('overlay-hidden');
-    this.ui.gameoverScreen.classList.add('overlay-hidden');
-    this.ui.pauseScreen.classList.add('overlay-hidden');
+      this.ui.startScreen.classList.add('overlay-hidden');
+      this.ui.gameoverScreen.classList.add('overlay-hidden');
+      this.ui.pauseScreen.classList.add('overlay-hidden');
 
-    // Notify ML backend
-    if (this.ml) this.ml.sendReset();
+      // Notify ML backend
+      if (this.ml) this.ml.sendReset();
 
-    this._updateHUD();
+      this._updateHUD();
+    });
   }
 
   _pause() {
@@ -310,13 +314,11 @@ export class Game {
     // Notify ML backend
     if (this.ml) this.ml.sendGameOver();
 
-    // Check leaderboard qualification
-    this._checkLeaderboardQualification();
-
-    // Delay showing game over screen
+    // Delay showing game over screen, then auto-submit leaderboard
     setTimeout(() => {
       if (this.state === 'gameover') {
         this.ui.gameoverScreen.classList.remove('overlay-hidden');
+        this._submitScoreIfQualified();
       }
     }, 800);
   }
@@ -753,61 +755,51 @@ export class Game {
     }
   }
 
-  _checkLeaderboardQualification() {
-    const score = this.score;
-    if (score <= 0) return;
+  _showNameModal(callback) {
+    this.nameModalCallback = callback;
+    this.ui.nameModal.classList.remove('overlay-hidden');
+    this.ui.nameInput.value = this.playerName || '';
+    this.ui.nameInput.focus();
+  }
 
-    // Qualifies if less than 5 entries or beats the lowest score
+  _submitName() {
+    const name = this.ui.nameInput.value.trim() || 'PILOT';
+    this.playerName = name;
+    this.ui.nameModal.classList.add('overlay-hidden');
+    this.ui.nameInput.blur();
+
+    const cb = this.nameModalCallback;
+    this.nameModalCallback = null;
+    if (cb) cb();
+  }
+
+  async _submitScoreIfQualified() {
+    const score = this.score;
+    if (score <= 0 || !this.playerName) return;
+
     const qualifies = this.leaderboard.length < 5 ||
       this.leaderboard.some(e => score > e.score) ||
       this.leaderboard.every(e => e.score === 0);
 
-    if (qualifies) {
-      this.pendingLeaderboardScore = {
-        score: score,
-        wave: this.waveManager.wave,
-      };
-      // Show name modal after the game over screen appears
-      setTimeout(() => {
-        this.ui.nameModal.classList.remove('overlay-hidden');
-        this.ui.nameInput.value = '';
-        this.ui.nameInput.focus();
-      }, 1200);
-    }
-  }
-
-  async _submitLeaderboardName() {
-    if (this.pendingLeaderboardScore === null) return;
-
-    const name = this.ui.nameInput.value.trim() || 'PILOT';
-    const payload = {
-      name: name,
-      score: this.pendingLeaderboardScore.score,
-      wave: this.pendingLeaderboardScore.wave,
-    };
-
-    this.pendingLeaderboardScore = null;
-    this._hideNameModal();
+    if (!qualifies) return;
 
     try {
       const res = await fetch(`${API_BASE}/leaderboard`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          name: this.playerName,
+          score: score,
+          wave: this.waveManager.wave,
+        }),
       });
       const data = await res.json();
       if (data.leaderboard) {
         this.leaderboard = data.leaderboard;
-        this._renderLeaderboard(name.toUpperCase().slice(0, 12));
+        this._renderLeaderboard(this.playerName.toUpperCase().slice(0, 12));
       }
     } catch (e) {
-      // Backend offline — silent fail
       console.warn('Failed to submit leaderboard score:', e);
     }
-  }
-
-  _hideNameModal() {
-    this.ui.nameModal.classList.add('overlay-hidden');
-    this.ui.nameInput.blur();
   }
 }
