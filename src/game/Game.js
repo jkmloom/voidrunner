@@ -15,7 +15,12 @@ import { AudioManager } from './AudioManager.js';
 import { MLConnection } from './MLConnection.js';
 
 // Backend API base URL (same as WebSocket server)
-const API_BASE = 'http://localhost:8765';
+const _host = (typeof window !== 'undefined' &&
+  window.location.hostname !== 'localhost' &&
+  window.location.hostname !== '127.0.0.1')
+  ? `${window.location.protocol}//${window.location.hostname}:8765`
+  : 'http://localhost:8765';
+const API_BASE = _host;
 
 export class Game {
   constructor() {
