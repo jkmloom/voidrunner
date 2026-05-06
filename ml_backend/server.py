@@ -202,14 +202,15 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8765))
     log.info("═══════════════════════════════════════════")
     log.info("  PRECOG Neural Engine v1.0")
-    log.info("  WebSocket: ws://localhost:8765/ws")
+    log.info(f"  WebSocket: ws://0.0.0.0:{port}/ws")
     log.info("═══════════════════════════════════════════")
 
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=8765,
+        port=port,
         log_level="info",
     )

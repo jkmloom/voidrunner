@@ -75,11 +75,9 @@ export class MLConnection {
 
   connect() {
     try {
-      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? 'localhost:8765'
-        : window.location.hostname + ':8765';
-      this.ws = new WebSocket(`${wsProtocol}//${wsHost}/ws`);
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8765';
+      const wsUrl = backendUrl.replace(/^http/, 'ws') + '/ws';
+      this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
         this.connected = true;

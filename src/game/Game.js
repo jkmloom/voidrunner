@@ -14,13 +14,8 @@ import { PowerUp, POWERUP_TYPES } from './PowerUp.js';
 import { AudioManager } from './AudioManager.js';
 import { MLConnection } from './MLConnection.js';
 
-// Backend API base URL (same as WebSocket server)
-const _host = (typeof window !== 'undefined' &&
-  window.location.hostname !== 'localhost' &&
-  window.location.hostname !== '127.0.0.1')
-  ? `${window.location.protocol}//${window.location.hostname}:8765`
-  : 'http://localhost:8765';
-const API_BASE = _host;
+// Backend API base URL — set via VITE_BACKEND_URL env var for deployment
+const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8765';
 
 export class Game {
   constructor() {
