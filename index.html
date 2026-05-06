@@ -70,8 +70,27 @@
           </div>
           <div class="divider"></div>
           <p class="ai-note">⟨◈⟩ PRECOG Neural Engine analyzes your play style and adapts in real-time</p>
+
+          <!-- Global Leaderboard -->
+          <div class="leaderboard-section">
+            <div class="leaderboard-title">⟨★⟩ GLOBAL LEADERBOARD</div>
+            <table id="lb-table-start" class="lb-table">
+              <thead>
+                <tr><th class="lb-rank">#</th><th class="lb-name">PILOT</th><th class="lb-score">SCORE</th><th class="lb-wave">WAVE</th></tr>
+              </thead>
+              <tbody id="lb-body-start">
+                <tr><td colspan="4" class="lb-empty">LOADING...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
           <button id="start-btn" class="neon-btn">START MISSION</button>
           <p class="hint">Press ENTER or click to start</p>
+          <div class="dev-credit">
+            <span class="dev-credit-icon">◆</span>
+            <span class="dev-credit-text">Designed & Developed by <strong>Jatin Kumar Mehta</strong></span>
+            <span class="dev-credit-sub">ABSS Institute of Technology, Meerut</span>
+          </div>
         </div>
       </div>
 
@@ -90,8 +109,36 @@
                 class="stat-value">x1</span></div>
           </div>
           <div id="new-highscore" class="new-hs-hidden">★ NEW HIGH SCORE ★</div>
+
+          <!-- Game Over Leaderboard -->
+          <div class="leaderboard-section">
+            <div class="leaderboard-title">⟨★⟩ GLOBAL LEADERBOARD</div>
+            <table class="lb-table">
+              <thead>
+                <tr><th class="lb-rank">#</th><th class="lb-name">PILOT</th><th class="lb-score">SCORE</th><th class="lb-wave">WAVE</th></tr>
+              </thead>
+              <tbody id="lb-body-gameover">
+                <tr><td colspan="4" class="lb-empty">LOADING...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
           <button id="restart-btn" class="neon-btn">RETRY MISSION</button>
           <p class="hint">Press ENTER or click to retry</p>
+        </div>
+      </div>
+
+      <!-- Name Input Modal (for leaderboard entry) -->
+      <div id="name-modal" class="overlay overlay-hidden">
+        <div class="overlay-content name-modal-content">
+          <h2 class="name-modal-title">★ TOP 5 SCORE ★</h2>
+          <p class="name-modal-sub">You've earned a place on the global leaderboard!</p>
+          <div class="name-input-wrap">
+            <label for="player-name-input" class="name-input-label">ENTER YOUR CALLSIGN</label>
+            <input type="text" id="player-name-input" class="name-input" maxlength="12" placeholder="PILOT" autocomplete="off" spellcheck="false" />
+          </div>
+          <button id="name-submit-btn" class="neon-btn">SUBMIT</button>
+          <p id="name-skip-hint" class="hint">Press ENTER to submit</p>
         </div>
       </div>
 

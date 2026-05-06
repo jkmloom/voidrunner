@@ -14,6 +14,9 @@ import { PowerUp, POWERUP_TYPES } from './PowerUp.js';
 import { AudioManager } from './AudioManager.js';
 import { MLConnection } from './MLConnection.js';
 
+// Backend API base URL (same as WebSocket server)
+const API_BASE = 'http://localhost:8765';
+
 export class Game {
   constructor() {
     this.canvas = null;
@@ -53,6 +56,10 @@ export class Game {
 
     // UI Elements (cached)
     this.ui = {};
+
+    // Leaderboard
+    this.leaderboard = [];
+    this.pendingLeaderboardScore = null;  // score waiting for name input
   }
 
   init() {
@@ -72,6 +79,9 @@ export class Game {
 
     // Update high score display
     this.ui.highscoreValue.textContent = this.highScore.toLocaleString();
+
+    // Fetch global leaderboard
+    this._fetchLeaderboard();
 
     // Start render loop (even on menu for starfield)
     this.lastTime = performance.now();
@@ -103,6 +113,13 @@ export class Game {
       container: document.getElementById('game-container'),
       startBtn: document.getElementById('start-btn'),
       restartBtn: document.getElementById('restart-btn'),
+      // Leaderboard
+      lbBodyStart: document.getElementById('lb-body-start'),
+      lbBodyGameover: document.getElementById('lb-body-gameover'),
+      // Name modal
+      nameModal: document.getElementById('name-modal'),
+      nameInput: document.getElementById('player-name-input'),
+      nameSubmitBtn: document.getElementById('name-submit-btn'),
     };
   }
 
@@ -123,6 +140,9 @@ export class Game {
       this.keys[e.code] = true;
 
       if (e.code === 'Enter' || e.code === 'Space') {
+        // Block if name modal is open
+        if (this.pendingLeaderboardScore !== null) return;
+
         if (this.state === 'menu') {
           e.preventDefault();
           this._startGame();
@@ -152,6 +172,18 @@ export class Game {
 
     this.ui.startBtn.addEventListener('click', () => this._startGame());
     this.ui.restartBtn.addEventListener('click', () => this._startGame());
+
+    // Name modal events
+    this.ui.nameSubmitBtn.addEventListener('click', () => this._submitLeaderboardName());
+    this.ui.nameInput.addEventListener('keydown', (e) => {
+      if (e.code === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        this._submitLeaderboardName();
+      }
+      // Prevent game keys from firing while typing
+      e.stopPropagation();
+    });
 
     // Mobile controls setup
     const mobileBtns = document.querySelectorAll('.dpad-btn, .action-btn');
@@ -213,6 +245,9 @@ export class Game {
   }
 
   _startGame() {
+    // Block if name modal is open
+    if (this.pendingLeaderboardScore !== null) return;
+
     this.audio.resume();
     this.state = 'playing';
     this.score = 0;
@@ -274,6 +309,9 @@ export class Game {
 
     // Notify ML backend
     if (this.ml) this.ml.sendGameOver();
+
+    // Check leaderboard qualification
+    this._checkLeaderboardQualification();
 
     // Delay showing game over screen
     setTimeout(() => {
@@ -675,5 +713,101 @@ export class Game {
     }
 
     ctx.globalAlpha = 1;
+  }
+
+  /* ─── Leaderboard ─── */
+  async _fetchLeaderboard() {
+    try {
+      const res = await fetch(`${API_BASE}/leaderboard`);
+      const data = await res.json();
+      this.leaderboard = data.leaderboard || [];
+      this._renderLeaderboard();
+    } catch (e) {
+      // Backend offline — show empty state
+      this.leaderboard = [];
+      this._renderLeaderboard();
+    }
+  }
+
+  _renderLeaderboard(highlightName = null) {
+    const bodies = [this.ui.lbBodyStart, this.ui.lbBodyGameover];
+
+    for (const tbody of bodies) {
+      if (!tbody) continue;
+
+      if (this.leaderboard.length === 0 || this.leaderboard.every(e => e.score === 0)) {
+        tbody.innerHTML = '<tr><td colspan="4" class="lb-empty">NO SCORES YET — BE THE FIRST</td></tr>';
+        continue;
+      }
+
+      tbody.innerHTML = this.leaderboard.map((entry, i) => {
+        const isHighlight = highlightName && entry.name === highlightName;
+        const cls = isHighlight ? ' class="lb-highlight"' : '';
+        return `<tr${cls}>` +
+          `<td class="lb-rank">${i + 1}</td>` +
+          `<td class="lb-name">${entry.name}</td>` +
+          `<td class="lb-score">${entry.score.toLocaleString()}</td>` +
+          `<td class="lb-wave">${entry.wave}</td>` +
+          `</tr>`;
+      }).join('');
+    }
+  }
+
+  _checkLeaderboardQualification() {
+    const score = this.score;
+    if (score <= 0) return;
+
+    // Qualifies if less than 5 entries or beats the lowest score
+    const qualifies = this.leaderboard.length < 5 ||
+      this.leaderboard.some(e => score > e.score) ||
+      this.leaderboard.every(e => e.score === 0);
+
+    if (qualifies) {
+      this.pendingLeaderboardScore = {
+        score: score,
+        wave: this.waveManager.wave,
+      };
+      // Show name modal after the game over screen appears
+      setTimeout(() => {
+        this.ui.nameModal.classList.remove('overlay-hidden');
+        this.ui.nameInput.value = '';
+        this.ui.nameInput.focus();
+      }, 1200);
+    }
+  }
+
+  async _submitLeaderboardName() {
+    if (this.pendingLeaderboardScore === null) return;
+
+    const name = this.ui.nameInput.value.trim() || 'PILOT';
+    const payload = {
+      name: name,
+      score: this.pendingLeaderboardScore.score,
+      wave: this.pendingLeaderboardScore.wave,
+    };
+
+    this.pendingLeaderboardScore = null;
+    this._hideNameModal();
+
+    try {
+      const res = await fetch(`${API_BASE}/leaderboard`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.leaderboard) {
+        this.leaderboard = data.leaderboard;
+        this._renderLeaderboard(name.toUpperCase().slice(0, 12));
+      }
+    } catch (e) {
+      // Backend offline — silent fail
+      console.warn('Failed to submit leaderboard score:', e);
+    }
+  }
+
+  _hideNameModal() {
+    this.ui.nameModal.classList.add('overlay-hidden');
+    this.ui.nameInput.blur();
   }
 }

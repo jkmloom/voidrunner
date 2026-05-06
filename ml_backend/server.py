@@ -18,7 +18,11 @@ Usage:
 import asyncio
 import json
 import logging
-from typing import Dict
+import os
+from pathlib import Path
+from typing import Dict, List
+
+from pydantic import BaseModel
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -48,6 +52,46 @@ app.add_middleware(
 # Track active AI sessions
 sessions: Dict[str, AdaptiveAI] = {}
 
+# ── Leaderboard ──
+LEADERBOARD_FILE = Path(__file__).parent / "leaderboard.txt"
+leaderboard_lock = asyncio.Lock()
+
+
+class ScoreEntry(BaseModel):
+    name: str
+    score: int
+    wave: int
+
+
+def _read_leaderboard() -> List[dict]:
+    """Read leaderboard from .txt file"""
+    entries = []
+    if LEADERBOARD_FILE.exists():
+        with open(LEADERBOARD_FILE, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split("|")
+                if len(parts) == 3:
+                    entries.append({
+                        "name": parts[0],
+                        "score": int(parts[1]),
+                        "wave": int(parts[2]),
+                    })
+    # Sort by score descending, keep top 5
+    entries.sort(key=lambda x: x["score"], reverse=True)
+    return entries[:5]
+
+
+def _write_leaderboard(entries: List[dict]):
+    """Write leaderboard to .txt file"""
+    entries.sort(key=lambda x: x["score"], reverse=True)
+    entries = entries[:5]
+    with open(LEADERBOARD_FILE, "w") as f:
+        for e in entries:
+            f.write(f"{e['name']}|{e['score']}|{e['wave']}\n")
+
 
 @app.get("/")
 async def root():
@@ -56,6 +100,41 @@ async def root():
         "status": "online",
         "active_sessions": len(sessions),
     }
+
+
+@app.get("/leaderboard")
+async def get_leaderboard():
+    """Fetch the top 5 global scores"""
+    entries = _read_leaderboard()
+    return {"leaderboard": entries}
+
+
+@app.post("/leaderboard")
+async def submit_score(entry: ScoreEntry):
+    """Submit a new score. Replaces lowest top-5 entry if it qualifies."""
+    async with leaderboard_lock:
+        entries = _read_leaderboard()
+        # Sanitize name: max 12 chars, alphanumeric + spaces
+        clean_name = "".join(c for c in entry.name if c.isalnum() or c == " ")[:12].strip()
+        if not clean_name:
+            clean_name = "PILOT"
+
+        new_entry = {
+            "name": clean_name.upper(),
+            "score": entry.score,
+            "wave": entry.wave,
+        }
+
+        # Check if it qualifies for top 5
+        if len(entries) < 5 or entry.score > entries[-1]["score"]:
+            entries.append(new_entry)
+            entries.sort(key=lambda x: x["score"], reverse=True)
+            entries = entries[:5]
+            _write_leaderboard(entries)
+            log.info(f"★ Leaderboard updated: {clean_name} — {entry.score} pts")
+            return {"accepted": True, "rank": next(i + 1 for i, e in enumerate(entries) if e["score"] == entry.score and e["name"] == clean_name.upper()), "leaderboard": entries}
+
+        return {"accepted": False, "leaderboard": entries}
 
 
 @app.websocket("/ws")
